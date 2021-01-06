@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.conf.urls import url
 from myapp.views import *
 
+
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^signup/', signup, name='signup'),

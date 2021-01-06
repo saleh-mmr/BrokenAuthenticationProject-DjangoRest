@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view
 from rest_framework import status
 from django.contrib.auth import authenticate
+from django.contrib.auth import login as django_login
+from .Authentication import token_expire_handler
 from rest_framework.authtoken.models import Token
 
 
@@ -29,18 +31,19 @@ def signup(request):
 def login(request):
     try:
         params = request.data
-        user = authenticate(username=params['username'], password=params['password'], )
-        if user:
+        user = authenticate(request=request, username=params['username'], password=params['password'], )
+        if user is not None:
+            django_login(request, user)
             token, _ = Token.objects.get_or_create(user=user)
+            is_expired, token = token_expire_handler(token)
             tmp_response = {
                 'access': token.key,
-                'userid': token.user.id
             }
             return Response(tmp_response, status=status.HTTP_200_OK)
         else:
-            return Response({"message": "Wrong username or password"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"message": "Wrong username or password"}, status=status.HTTP_403_FORBIDDEN)
     except Exception as e:
-        return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(status=status.HTTP_403_FORBIDDEN)
 
 
 @api_view(['GET'])
