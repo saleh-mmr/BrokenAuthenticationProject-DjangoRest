@@ -93,7 +93,8 @@ TOKEN_EXPIRED_AFTER_SECONDS = 60 * 60 * 4
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'myapp.Authentication.ExpiringTokenAuthentication',
+        # 'rest_framework.authentication.TokenAuthentication',
     ]
 }
 

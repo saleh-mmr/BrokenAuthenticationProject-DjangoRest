@@ -22,7 +22,10 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^signup/', signup, name='signup'),
     url(r'^login/', login, name='login'),
+    url(r'^logout/', logout, name='logout'),
+    url(r'^user-info/', user_info, name='user-info'),
     url(r'^show-report-list/', show_reports, name='report-list'),
     url(r'^add-patient/', add_patient, name='add-patient'),
     url(r'^delete-patient/(?P<pk>\d+)$', delete_patient, name='delete-patient'),
+    url(r'^is-admin/', is_admin, name='is-admin'),
 ]

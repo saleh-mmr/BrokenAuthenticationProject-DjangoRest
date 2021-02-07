@@ -37,7 +37,7 @@ class ExpiringTokenAuthentication(TokenAuthentication):
     If token is expired then it will be removed
     and new one with different key will be created
     """
-    keyword = "Bearer"  # to be compatible with prev
+    keyword = "Token"  # to be compatible with prev
 
     def authenticate_credentials(self, key):
         try:

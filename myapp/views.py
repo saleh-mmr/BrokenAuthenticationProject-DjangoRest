@@ -1,13 +1,14 @@
 from . import models
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes, authentication_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.decorators import api_view
 from rest_framework import status
 from django.contrib.auth import authenticate
 from django.contrib.auth import login as django_login
-from .Authentication import token_expire_handler
+# from .Authentication import token_expire_handler
 from rest_framework.authtoken.models import Token
+from django.contrib.auth import logout as django_logout
 
 
 @api_view(['POST'])
@@ -15,13 +16,17 @@ from rest_framework.authtoken.models import Token
 def signup(request):
     try:
         data = request.data
-        data_username = data['username']
-        data_password = data['password']
-        data_email = data['email']
-        newUser = models.MyUser.objects.create(username=data_username, email=data_email)
-        newUser.set_password(data_password)
-        newUser.save()
-        return Response({"message": "Created Successfully!"}, status=status.HTTP_200_OK)
+        data_username = data['user']
+        data_password = data['pass']
+        data_confirm_password = data['cpassword']
+        if data_confirm_password == data_password:
+            newUser = models.MyUser.objects.create(username=data_username)
+            newUser.set_password(data_password)
+            newUser.save()
+            if newUser:
+                return Response({"message": "Created Successfully!"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Something might be Wrong!"}, status=status.HTTP_406_NOT_ACCEPTABLE)
     except Exception as e:
         return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -35,7 +40,7 @@ def login(request):
         if user is not None:
             django_login(request, user)
             token, _ = Token.objects.get_or_create(user=user)
-            is_expired, token = token_expire_handler(token)
+            # is_expired, token = token_expire_handler(token)
             tmp_response = {
                 'access': token.key,
             }
@@ -44,6 +49,30 @@ def login(request):
             return Response({"message": "Wrong username or password"}, status=status.HTTP_403_FORBIDDEN)
     except Exception as e:
         return Response(status=status.HTTP_403_FORBIDDEN)
+
+
+@api_view(['GET'])
+@permission_classes(())
+def logout(request):
+    try:
+        django_logout(request)
+        Token.objects.filter(key=request.headers.get('Authorization')[6:]).delete()
+        return Response({"message": "Logout Successfully!"}, status=status.HTTP_200_OK)
+    except Exception as e:
+        print(e)
+        return Response({"message": "An error occurs in logout!"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes(())
+def user_info(request):
+    try:
+        user = request.user
+        rsp = {'username': user.username}
+        return Response(rsp, status=status.HTTP_200_OK)
+    except Exception as e:
+        print(e)
+        return Response({}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(['GET'])
@@ -87,11 +116,21 @@ def add_patient(request):
 
 
 @api_view(['GET'])
-@permission_classes(())
+@permission_classes([IsAuthenticated])
 def delete_patient(request, pk):
     try:
         patient = models.Patient.objects.get(national_code=pk)
         patient.delete()
+        return Response({'flag': True, 'message': 'patient deleted'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        print(e)
+        return Response({'flag': False}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def is_admin(request):
+    try:
         return Response({'flag': True}, status=status.HTTP_200_OK)
     except Exception as e:
         print(e)
